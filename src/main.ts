@@ -47,6 +47,7 @@ function main() {
 function SetupEventsAndButtons() {
     let lines: {x: number, y: number}[][] = [];
     let currentLine: {x: number, y: number}[] = [];
+    let redoLines: {x: number, y: number}[][] = [];
     let OnDrawingChanged = new Event("drawing-changed");
 
     canvas.addEventListener('drawing-changed', () => {
@@ -70,6 +71,7 @@ function SetupEventsAndButtons() {
         cursor.y = e.offsetY;
 
         currentLine = [];
+        redoLines.length = 0;
         lines.push(currentLine);
         currentLine.push({x: cursor.x, y: cursor.y});
         canvas.dispatchEvent(OnDrawingChanged);
@@ -92,6 +94,26 @@ function SetupEventsAndButtons() {
     clearButton.addEventListener('click', () => {
         ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
         lines.length = 0;
+    });
+
+    const undoButton = app.appendChild(document.createElement('button'));
+    undoButton.innerHTML = "undo";
+    undoButton.addEventListener('click', () => {
+        if (lines.length > 0) {
+            let line = lines.pop();
+            if (line) redoLines.push(line);
+            canvas.dispatchEvent(OnDrawingChanged);
+        }
+    })
+
+    const redoButton = app.appendChild(document.createElement('button'));
+    redoButton.innerHTML = "redo";
+    redoButton.addEventListener('click', () => {
+        if (redoLines.length > 0) {
+            let line = redoLines.pop();
+            if (line) lines.push(line);
+            canvas.dispatchEvent(OnDrawingChanged);
+        }
     })
 }
 
