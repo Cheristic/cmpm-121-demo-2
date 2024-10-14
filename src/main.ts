@@ -20,7 +20,7 @@ function SetupPage() {
 
 let canvas;
 let ctx;
-let cursor = {active: false, x: 0, y:0}
+let cursor = {active: false}
 function main() {
     SetupPage();
 
@@ -45,42 +45,52 @@ function main() {
 }
 
 function SetupEventsAndButtons() {
-    let lines: {x: number, y: number}[][] = [];
-    let currentLine: {x: number, y: number}[] = [];
-    let redoLines: {x: number, y: number}[][] = [];
+    let lines: DisplayLineCmd[] = [];
+    let currentLine: DisplayLineCmd;
+    let redoLines: DisplayLineCmd[] = [];
     let OnDrawingChanged = new Event("drawing-changed");
 
-    canvas.addEventListener('drawing-changed', () => {
-        ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
-        lines.forEach((line) => {
-            if (line.length > 1) {
+    class DisplayLineCmd {
+        readonly startPoint: {x: number, y: number};
+        line: {x: number, y: number}[] = [];
+
+        drag(x: number, y: number) {
+            this.line.push({x, y});
+        }
+
+        display(ctx: CanvasRenderingContext2D) {
+            if (this.line.length > 1) {
                 ctx?.beginPath();
-                const {x, y} = line[0];
+                const {x, y} = this.line[0];
                 ctx?.moveTo(x, y);
-                for (const {x, y} of line) {
+                for (const {x, y} of this.line) {
                     ctx?.lineTo(x, y);
                 }
                 ctx?.stroke();
             }
+        }
+    }
+
+    canvas.addEventListener('drawing-changed', () => {
+        ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
+        lines.forEach((line) => {
+            line.display(ctx);
         })
     })
 
     canvas.addEventListener('mousedown', (e) => {
         cursor.active = true;
-        cursor.x = e.offsetX;
-        cursor.y = e.offsetY;
 
-        currentLine = [];
+        currentLine = new DisplayLineCmd();
+        currentLine.drag(e.offsetX, e.offsetY);
         redoLines.length = 0;
         lines.push(currentLine);
-        currentLine.push({x: cursor.x, y: cursor.y});
         canvas.dispatchEvent(OnDrawingChanged);
     })
 
     canvas.addEventListener('mousemove', (e) => {
         if (cursor.active) {
-            cursor.x = e.offsetX; cursor.y = e.offsetY;
-            currentLine.push({x: cursor.x, y: cursor.y});
+            currentLine.drag(e.offsetX, e.offsetY);
             canvas.dispatchEvent(OnDrawingChanged);
         }
     })
@@ -93,6 +103,15 @@ function SetupEventsAndButtons() {
     clearButton.innerHTML = "clear";
     clearButton.addEventListener('click', () => {
         ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
+        currentLine = new DisplayLineCmd();
+        lines.forEach((cmd) => {
+            if (cmd.line.length > 0) {
+                for (const {x, y} of cmd.line) {
+                    currentLine.drag(x, y);
+                }
+            }
+        })
+        redoLines.push(currentLine);
         lines.length = 0;
     });
 
@@ -111,6 +130,7 @@ function SetupEventsAndButtons() {
     redoButton.addEventListener('click', () => {
         if (redoLines.length > 0) {
             let line = redoLines.pop();
+            console.log(line);
             if (line) lines.push(line);
             canvas.dispatchEvent(OnDrawingChanged);
         }
