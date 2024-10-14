@@ -20,7 +20,7 @@ function SetupPage() {
 
 let canvas;
 let ctx;
-let cursor = {active: false}
+let cursor = {active: false, x: 0, y: 0}
 function main() {
     SetupPage();
 
@@ -35,6 +35,8 @@ function main() {
         console.log('Failed to get context');
         return;
     }
+
+    //canvas.style.cursor = "none";
 
     ctx.fillStyle = '#FFFFFF'
     ctx.lineWidth = 2;
@@ -77,12 +79,32 @@ function SetupEventsAndButtons() {
             }
         }
     }
+    
+    class DrawCursorCmd {
+        
+        constructor() {
+        }
+
+        display(x: number, y: number) {
+            ctx.fillStyle = '#000000'
+            ctx.font = `${currentPenWeight*4}px monospace`;
+            console.log(ctx.font);
+            ctx.fillText("∘︎", x-currentPenWeight/1.1, y+currentPenWeight);
+        }
+    }
+
+    let cursorCmd = new DrawCursorCmd();
 
     canvas.addEventListener('drawing-changed', () => {
+        ctx.fillStyle = '#FFFFFF'
         ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
         lines.forEach((cmd) => {
             cmd.display(ctx);
         })
+
+        if (!cursor.active) {       
+            cursorCmd.display(cursor.x, cursor.y);
+        }       
     })
 
     canvas.addEventListener('mousedown', (e) => {
@@ -99,6 +121,10 @@ function SetupEventsAndButtons() {
         if (cursor.active) {
             currentLine.drag(e.offsetX, e.offsetY);
             canvas.dispatchEvent(OnDrawingChanged);
+        } else {
+            cursor.x = e.offsetX;
+            cursor.y = e.offsetY;
+            canvas.dispatchEvent(OnDrawingChanged);
         }
     })
 
@@ -109,6 +135,7 @@ function SetupEventsAndButtons() {
     const clearButton = app.appendChild(document.createElement('button'));
     clearButton.innerHTML = "clear";
     clearButton.addEventListener('click', () => {
+        ctx.fillStyle = '#FFFFFF'
         ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
         currentLine = new DisplayLineCmd();
         lines.forEach((cmd) => {
@@ -137,11 +164,16 @@ function SetupEventsAndButtons() {
     redoButton.addEventListener('click', () => {
         if (redoLines.length > 0) {
             let line = redoLines.pop();
-            console.log(line);
             if (line) lines.push(line);
             canvas.dispatchEvent(OnDrawingChanged);
         }
     })
+
+    app.appendChild(document.createElement('br'));
+
+    const penWeightText = app.appendChild(document.createElement('div'));
+    penWeightText.setAttribute('style', 'margin-top:15px;')
+    penWeightText.innerHTML = "Pen Weight";
 
     const penWeight = app.appendChild(document.createElement('input'));
     penWeight.type = 'range';
@@ -150,8 +182,10 @@ function SetupEventsAndButtons() {
     penWeight.value = currentPenWeight.toString();    
     penWeight.addEventListener('input', () => {
         currentPenWeight = Number(penWeight.value);
-        console.log(currentPenWeight);
     })
+
+
+
 }
 
 main();
