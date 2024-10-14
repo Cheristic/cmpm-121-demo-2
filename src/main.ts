@@ -49,10 +49,16 @@ function SetupEventsAndButtons() {
     let currentLine: DisplayLineCmd;
     let redoLines: DisplayLineCmd[] = [];
     let OnDrawingChanged = new Event("drawing-changed");
+    let currentPenWeight: number = 5;
 
     class DisplayLineCmd {
         readonly startPoint: {x: number, y: number};
         line: {x: number, y: number}[] = [];
+        readonly weight: number;
+
+        constructor() {
+            this.weight = currentPenWeight;
+        }
 
         drag(x: number, y: number) {
             this.line.push({x, y});
@@ -61,6 +67,7 @@ function SetupEventsAndButtons() {
         display(ctx: CanvasRenderingContext2D) {
             if (this.line.length > 1) {
                 ctx?.beginPath();
+                ctx.lineWidth = this.weight;
                 const {x, y} = this.line[0];
                 ctx?.moveTo(x, y);
                 for (const {x, y} of this.line) {
@@ -73,8 +80,8 @@ function SetupEventsAndButtons() {
 
     canvas.addEventListener('drawing-changed', () => {
         ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
-        lines.forEach((line) => {
-            line.display(ctx);
+        lines.forEach((cmd) => {
+            cmd.display(ctx);
         })
     })
 
@@ -134,6 +141,16 @@ function SetupEventsAndButtons() {
             if (line) lines.push(line);
             canvas.dispatchEvent(OnDrawingChanged);
         }
+    })
+
+    const penWeight = app.appendChild(document.createElement('input'));
+    penWeight.type = 'range';
+    penWeight.min = '1';
+    penWeight.max = '10';
+    penWeight.value = currentPenWeight.toString();    
+    penWeight.addEventListener('input', () => {
+        currentPenWeight = Number(penWeight.value);
+        console.log(currentPenWeight);
     })
 }
 
