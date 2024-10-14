@@ -15,10 +15,7 @@ function SetupPage() {
     const headerText = document.createElement("h1");
     headerText.innerHTML = "Welcome to KidPix";
     headerText.setAttribute("style", "margin-top: 0px; padding-top: 20px;");
-    header.append(headerText);
-
-    
-    
+    header.append(headerText);  
 }
 
 let canvas;
@@ -44,21 +41,45 @@ function main() {
     ctx.strokeStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    SetupEventsAndButtons();
+}
+
+function SetupEventsAndButtons() {
+    let lines: {x: number, y: number}[][] = [];
+    let currentLine: {x: number, y: number}[] = [];
+    let OnDrawingChanged = new Event("drawing-changed");
+
+    canvas.addEventListener('drawing-changed', () => {
+        ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
+        lines.forEach((line) => {
+            if (line.length > 1) {
+                ctx?.beginPath();
+                const {x, y} = line[0];
+                ctx?.moveTo(x, y);
+                for (const {x, y} of line) {
+                    ctx?.lineTo(x, y);
+                }
+                ctx?.stroke();
+            }
+        })
+    })
+
     canvas.addEventListener('mousedown', (e) => {
         cursor.active = true;
         cursor.x = e.offsetX;
         cursor.y = e.offsetY;
+
+        currentLine = [];
+        lines.push(currentLine);
+        currentLine.push({x: cursor.x, y: cursor.y});
+        canvas.dispatchEvent(OnDrawingChanged);
     })
 
     canvas.addEventListener('mousemove', (e) => {
         if (cursor.active) {
-            ctx?.beginPath();
-            ctx?.moveTo(cursor.x, cursor.y);
-            ctx?.lineTo(e.offsetX, e.offsetY);
-            ctx?.stroke();
-
-            cursor.x = e.offsetX;
-            cursor.y = e.offsetY;
+            cursor.x = e.offsetX; cursor.y = e.offsetY;
+            currentLine.push({x: cursor.x, y: cursor.y});
+            canvas.dispatchEvent(OnDrawingChanged);
         }
     })
 
@@ -70,6 +91,7 @@ function main() {
     clearButton.innerHTML = "clear";
     clearButton.addEventListener('click', () => {
         ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
+        lines.length = 0;
     })
 }
 
