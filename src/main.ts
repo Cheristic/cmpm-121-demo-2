@@ -210,6 +210,38 @@ function SetupEventsAndButtons() {
         }
     })
 
+    const exportButton = app.appendChild(document.createElement('button'));
+    exportButton.innerHTML = "export";
+    exportButton.addEventListener('click', () => {
+        let exp_canvas = document.createElement('canvas');
+        if (!exp_canvas) {
+            console.log('Failed to create canvas for export');
+            return;
+        }
+        exp_canvas.width = 1024;
+        exp_canvas.height = 1024;
+
+        let exp_ctx = exp_canvas.getContext('2d');
+        if (!exp_ctx) {
+            console.log('Failed to get context for export');
+            return;
+        }
+
+        exp_ctx.scale(4,4);
+        exp_ctx.fillStyle = '#FFFFFF'
+        exp_ctx.fillRect(0, 0, exp_canvas!.width, exp_canvas!.height);
+        actions.forEach((cmd) => {
+            cmd.display(exp_ctx);
+        });
+
+
+        const anchor = document.createElement("a");
+        anchor.href = exp_canvas.toDataURL("image/png");
+        anchor.download = "sketchpad.png";
+        anchor.click();
+
+    })
+
     app.appendChild(document.createElement('br'));
 
     const penWeightText = app.appendChild(document.createElement('div'));
