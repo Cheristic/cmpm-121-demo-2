@@ -176,7 +176,7 @@ function SetupEventsAndButtons() {
         }
     })
 
-    canvas.addEventListener('mouseup', () => {
+    app.addEventListener('mouseup', () => {
         cursor.active = false;
     })
 
