@@ -62,6 +62,7 @@ function SetupEventsAndButtons() {
         "👆",
         "💍"
     ]
+    let toolRotation: number = 0;
 
     class DisplayLineCmd {
         readonly startPoint: { x: number, y: number };
@@ -95,12 +96,14 @@ function SetupEventsAndButtons() {
         adjustPoint: { x: number, y: number };
         readonly weight: number;
         readonly emojiType: number;
+        readonly rotation: number;
 
         constructor(x: number, y: number) {
             this.weight = currentPenWeight;
             this.startPoint = { x, y };
             this.adjustPoint = this.startPoint;
             this.emojiType = toolSelected;
+            this.rotation = toolRotation;
         }
 
         drag(x: number, y: number) {
@@ -109,8 +112,11 @@ function SetupEventsAndButtons() {
 
         display(ctx: CanvasRenderingContext2D) {
             ctx.fillStyle = '#000000'
+            ctx.translate(this.adjustPoint.x, this.adjustPoint.y);
+            ctx.rotate(this.rotation);
             ctx.font = `${this.weight * 4}px monospace`;
-            ctx.fillText(`${tools[this.emojiType]}`, this.adjustPoint.x - this.weight / 1.1, this.adjustPoint.y + this.weight);
+            ctx.fillText(`${tools[this.emojiType]}`, -this.weight / 1.1, this.weight);
+            ctx.resetTransform();
         }
     }
 
@@ -118,9 +124,12 @@ function SetupEventsAndButtons() {
         display(x: number, y: number) {
             ctx.globalAlpha = 0.2;
             ctx.fillStyle = '#000000'
+            ctx.translate(x, y);
+            ctx.rotate(toolRotation);
             ctx.font = `${currentPenWeight * 4}px monospace`;
-            ctx.fillText(`${tools[toolSelected]}`, x - currentPenWeight / 1.1, y + currentPenWeight);
+            ctx.fillText(`${tools[toolSelected]}`, - currentPenWeight / 1.1, currentPenWeight);
             ctx.globalAlpha = 1;
+            ctx.resetTransform();
         }
     }
 
@@ -269,9 +278,24 @@ function SetupEventsAndButtons() {
     penWeight.type = 'range';
     penWeight.min = '1';
     penWeight.max = '10';
+    penWeight.step = '.1';
     penWeight.value = currentPenWeight.toString();
     penWeight.addEventListener('input', () => {
         currentPenWeight = Number(penWeight.value);
+    })
+
+    const penRotationText = app.appendChild(document.createElement('div'));
+    penRotationText.setAttribute('style', 'margin-top:0px;')
+    penRotationText.innerHTML = "Pen Rotation";
+
+    const penRotation = app.appendChild(document.createElement('input'));
+    penRotation.type = 'range';
+    penRotation.min = '0';
+    penRotation.max = '6.2832';
+    penRotation.step = '.1';
+    penRotation.value = toolRotation.toString();
+    penRotation.addEventListener('input', () => {
+        toolRotation = Number(penRotation.value);
     })
 
     app.appendChild(document.createElement('br'));
