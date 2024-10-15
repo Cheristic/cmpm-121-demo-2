@@ -8,21 +8,21 @@ document.title = APP_NAME;
 function SetupPage() {
     const header = document.createElement("div");
     header.setAttribute(
-    "style",
-    "position:absolute;width:100%;top:0%;text-align: center;-webkit-text-stroke: 2px #aaa676;color:#2f2d12;font-size: 1em;text-shadow: 0px 4.5px 4px #36301f;font-style:italic;font-family:papyrus;",
+        "style",
+        "position:absolute;width:100%;top:0%;text-align: center;-webkit-text-stroke: 2px #aaa676;color:#2f2d12;font-size: 1em;text-shadow: 0px 4.5px 4px #36301f;font-style:italic;font-family:papyrus;",
     );
     document.body.prepend(header);
     const headerText = document.createElement("h1");
     headerText.innerHTML = "Welcome to KidPix";
     headerText.setAttribute("style", "margin-top: 0px; padding-top: 20px;");
-    header.append(headerText);  
+    header.append(headerText);
 }
 
 let canvas;
 let ctx;
-let cursor = {active: false, x: 0, y: 0}
+let cursor = { active: false, x: 0, y: 0 }
 function main() {
-        
+
     SetupPage();
 
     canvas = document.querySelector<HTMLCanvasElement>('canvas');
@@ -48,10 +48,10 @@ function main() {
 }
 
 function SetupEventsAndButtons() {
-    
-    let lines: (DisplayLineCmd | DisplayEmojiCmd)[] = [];
-    let currentLine: DisplayLineCmd | DisplayEmojiCmd;
-    let redoLines: (DisplayLineCmd | DisplayEmojiCmd | ClearCmd)[] = [];
+
+    let actions: (DisplayLineCmd | DisplayEmojiCmd)[] = [];
+    let currentAction: DisplayLineCmd | DisplayEmojiCmd;
+    let redoActions: (DisplayLineCmd | DisplayEmojiCmd | ClearCmd)[] = [];
     let OnDrawingChanged = new Event("drawing-changed");
     let currentPenWeight: number = 5;
     let OnToolMoved = new Event('tool-moved');
@@ -64,8 +64,8 @@ function SetupEventsAndButtons() {
     ]
 
     class DisplayLineCmd {
-        readonly startPoint: {x: number, y: number};
-        line: {x: number, y: number}[] = [];
+        readonly startPoint: { x: number, y: number };
+        line: { x: number, y: number }[] = [];
         readonly weight: number;
 
         constructor() {
@@ -73,16 +73,16 @@ function SetupEventsAndButtons() {
         }
 
         drag(x: number, y: number) {
-            this.line.push({x, y});
+            this.line.push({ x, y });
         }
 
         display(ctx: CanvasRenderingContext2D) {
             if (this.line.length > 1) {
                 ctx?.beginPath();
                 ctx.lineWidth = this.weight;
-                const {x, y} = this.line[0];
+                const { x, y } = this.line[0];
                 ctx?.moveTo(x, y);
-                for (const {x, y} of this.line) {
+                for (const { x, y } of this.line) {
                     ctx?.lineTo(x, y);
                 }
                 ctx?.stroke();
@@ -91,49 +91,41 @@ function SetupEventsAndButtons() {
     }
 
     class DisplayEmojiCmd {
-        startPoint: {x: number, y: number};
-        adjustPoint: {x: number, y: number};
+        startPoint: { x: number, y: number };
+        adjustPoint: { x: number, y: number };
         readonly weight: number;
         readonly emojiType: number;
 
         constructor(x: number, y: number) {
             this.weight = currentPenWeight;
-            this.startPoint = {x, y};
+            this.startPoint = { x, y };
             this.adjustPoint = this.startPoint;
             this.emojiType = toolSelected;
         }
 
         drag(x: number, y: number) {
-            this.adjustPoint = {x, y};
+            this.adjustPoint = { x, y };
         }
 
         display(ctx: CanvasRenderingContext2D) {
-            ctx.font = `${currentPenWeight*4}px monospace`;
-            ctx.fillText(`${tools[this.emojiType]}`, this.adjustPoint.x-currentPenWeight/1.1, this.adjustPoint.y+currentPenWeight);
+            ctx.fillStyle = '#000000'
+            ctx.font = `${currentPenWeight * 4}px monospace`;
+            ctx.fillText(`${tools[this.emojiType]}`, this.adjustPoint.x - currentPenWeight / 1.1, this.adjustPoint.y + currentPenWeight);
         }
     }
-    
+
     class DrawCursorCmd {
         display(x: number, y: number) {
             ctx.globalAlpha = 0.2;
             ctx.fillStyle = '#000000'
-            ctx.font = `${currentPenWeight*4}px monospace`;
-            console.log(ctx.font);
-            ctx.fillText(`${tools[toolSelected]}`, x-currentPenWeight/1.1, y+currentPenWeight);
+            ctx.font = `${currentPenWeight * 4}px monospace`;
+            ctx.fillText(`${tools[toolSelected]}`, x - currentPenWeight / 1.1, y + currentPenWeight);
             ctx.globalAlpha = 1;
         }
     }
 
     class ClearCmd { // keep a record of the entire screen when cleared so it can be redo'ed
-        lines: DisplayLineCmd[] = [];
-        emojis: DisplayEmojiCmd[] = [];
-
-        addLine(cmd: DisplayLineCmd) {
-            this.lines.push(cmd);
-        }
-        addEmoji(cmd: DisplayEmojiCmd) {
-            this.emojis.push(cmd);
-        }
+        actions: (DisplayLineCmd | DisplayEmojiCmd)[] = [];
     }
 
     let cursorCmd = new DrawCursorCmd();
@@ -141,31 +133,31 @@ function SetupEventsAndButtons() {
     canvas.addEventListener('drawing-changed', () => {
         ctx.fillStyle = '#FFFFFF'
         ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
-        lines.forEach((cmd) => {
+        actions.forEach((cmd) => {
             cmd.display(ctx);
-        })          
+        })
     })
 
-    canvas.addEventListener('tool-moved', () => {       
-        if (!cursor.active) {       
+    canvas.addEventListener('tool-moved', () => {
+        if (!cursor.active) {
             cursorCmd.display(cursor.x, cursor.y);
-        }   
+        }
     })
 
     canvas.addEventListener('mousedown', (e) => {
         cursor.active = true;
 
-        if (toolSelected == 0) currentLine = new DisplayLineCmd();
-        else currentLine = new DisplayEmojiCmd(e.offsetX, e.offsetY);
-        currentLine.drag(e.offsetX, e.offsetY);
-        redoLines.length = 0;
-        lines.push(currentLine);
+        if (toolSelected == 0) currentAction = new DisplayLineCmd();
+        else currentAction = new DisplayEmojiCmd(e.offsetX, e.offsetY);
+        currentAction.drag(e.offsetX, e.offsetY);
+        redoActions.length = 0;
+        actions.push(currentAction);
         canvas.dispatchEvent(OnDrawingChanged);
     })
 
     canvas.addEventListener('mousemove', (e) => {
         if (cursor.active) {
-            currentLine.drag(e.offsetX, e.offsetY);
+            currentAction.drag(e.offsetX, e.offsetY);
             canvas.dispatchEvent(OnDrawingChanged);
         } else {
             cursor.x = e.offsetX;
@@ -185,25 +177,17 @@ function SetupEventsAndButtons() {
         ctx.fillStyle = '#FFFFFF'
         ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
         let clearScreen = new ClearCmd();
-        lines.forEach((cmd) => {
-            if (cmd instanceof DisplayLineCmd) {
-                if (cmd.line.length > 0) {
-                    clearScreen.addLine(cmd);
-                }
-            }  else {
-                clearScreen.addEmoji(cmd);
-            }       
-        });
-        redoLines.push(clearScreen);
-        lines.length = 0;
+        clearScreen.actions = actions.splice(0);
+        redoActions.push(clearScreen);
+        actions.length = 0;
     });
 
     const undoButton = app.appendChild(document.createElement('button'));
     undoButton.innerHTML = "undo";
     undoButton.addEventListener('click', () => {
-        if (lines.length > 0) {
-            let line = lines.pop();
-            if (line) redoLines.push(line);
+        if (actions.length > 0) {
+            let line = actions.pop();
+            if (line) redoActions.push(line);
             canvas.dispatchEvent(OnDrawingChanged);
         }
     })
@@ -211,18 +195,15 @@ function SetupEventsAndButtons() {
     const redoButton = app.appendChild(document.createElement('button'));
     redoButton.innerHTML = "redo";
     redoButton.addEventListener('click', () => {
-        if (redoLines.length > 0) {
-            let line = redoLines.pop();
-            if (line) {
-                if (line instanceof DisplayLineCmd || line instanceof DisplayEmojiCmd) {
-                    lines.push(line);
-                } else if (line instanceof ClearCmd) {
-                    line.lines.forEach(element => {
-                        lines.push(element);
+        if (redoActions.length > 0) {
+            let action = redoActions.pop();
+            if (action) {
+                if (action instanceof DisplayLineCmd || action instanceof DisplayEmojiCmd) {
+                    actions.push(action);
+                } else if (action instanceof ClearCmd) {
+                    action.actions.forEach(element => {
+                        actions.push(element);
                     });
-                    line.emojis.forEach(element => {
-                        lines.push(element);
-                    })
                 }
             }
             canvas.dispatchEvent(OnDrawingChanged);
@@ -239,7 +220,7 @@ function SetupEventsAndButtons() {
     penWeight.type = 'range';
     penWeight.min = '1';
     penWeight.max = '10';
-    penWeight.value = currentPenWeight.toString();    
+    penWeight.value = currentPenWeight.toString();
     penWeight.addEventListener('input', () => {
         currentPenWeight = Number(penWeight.value);
     })
@@ -257,6 +238,21 @@ function SetupEventsAndButtons() {
             toolSelected = i;
         })
     }
+    app.appendChild(document.createElement('br'));
+    const customButton = app.appendChild(document.createElement('button'));
+    customButton.innerHTML = "Custom";
+    customButton.addEventListener('click', () => {
+        let sticker = prompt("Give an emoji");
+        if (sticker) {
+            const toolButton = app.appendChild(document.createElement('button'));
+            tools.push(sticker);
+            toolButton.innerHTML = sticker;
+            toolSelected = tools.length-1;
+            toolButton.addEventListener('click', () => {
+                toolSelected = tools.length-1;
+            })
+        }
+    })
 }
 
 main();
