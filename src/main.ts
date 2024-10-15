@@ -9,7 +9,7 @@ function SetupPage() {
     const header = document.createElement("div");
     header.setAttribute(
         "style",
-        "position:absolute;width:100%;top:0%;text-align: center;-webkit-text-stroke: 2px #aaa676;color:#2f2d12;font-size: 1em;text-shadow: 0px 4.5px 4px #36301f;font-style:italic;font-family:papyrus;",
+        "position:absolute;padding-left:50px;width:100%;top:0%;text-align: center;-webkit-text-stroke: 2px #aaa676;color:#2f2d12;font-size: 1em;text-shadow: 0px 4.5px 4px #36301f;font-style:italic;font-family:papyrus;",
     );
     document.body.prepend(header);
     const headerText = document.createElement("h1");
@@ -20,7 +20,7 @@ function SetupPage() {
 
 let canvas;
 let ctx;
-let cursor = { active: false, x: 0, y: 0 }
+let cursor = { active: false, leftscreen: false, x: 0, y: 0 }
 function main() {
 
     SetupPage();
@@ -37,7 +37,7 @@ function main() {
         return;
     }
 
-    //canvas.style.cursor = "none";
+    canvas.style.cursor = "none";
 
     ctx.fillStyle = '#FFFFFF'
     ctx.lineWidth = 2;
@@ -109,8 +109,8 @@ function SetupEventsAndButtons() {
 
         display(ctx: CanvasRenderingContext2D) {
             ctx.fillStyle = '#000000'
-            ctx.font = `${currentPenWeight * 4}px monospace`;
-            ctx.fillText(`${tools[this.emojiType]}`, this.adjustPoint.x - currentPenWeight / 1.1, this.adjustPoint.y + currentPenWeight);
+            ctx.font = `${this.weight * 4}px monospace`;
+            ctx.fillText(`${tools[this.emojiType]}`, this.adjustPoint.x - this.weight / 1.1, this.adjustPoint.y + this.weight);
         }
     }
 
@@ -169,6 +169,23 @@ function SetupEventsAndButtons() {
 
     canvas.addEventListener('mouseup', () => {
         cursor.active = false;
+    })
+
+    canvas.addEventListener('mouseenter', (e) => {
+        if (cursor.leftscreen && cursor.active) { // left and came back while still holding down
+            if (toolSelected == 0) currentAction = new DisplayLineCmd();
+            else currentAction = new DisplayEmojiCmd(e.offsetX, e.offsetY);
+            currentAction.drag(e.offsetX, e.offsetY);
+            redoActions.length = 0;
+            actions.push(currentAction);
+            canvas.dispatchEvent(OnDrawingChanged);
+        }
+        cursor.leftscreen = false;
+    })
+
+    canvas.addEventListener('mouseleave', () => {
+        cursor.leftscreen = true;
+        canvas.dispatchEvent(OnDrawingChanged);
     })
 
     const clearButton = app.appendChild(document.createElement('button'));
