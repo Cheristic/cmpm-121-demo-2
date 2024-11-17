@@ -60,7 +60,8 @@ function SetupEventsAndButtons() {
         "∘︎",
         "🐹",
         "👆",
-        "💍"
+        "💍",
+        "🐵"
     ]
     let toolRotation: number = 0;
 
