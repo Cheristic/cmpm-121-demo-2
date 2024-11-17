@@ -23,14 +23,21 @@ a:hover {
 }
 
 body {
-  background-image: url("../src/public/heaven.jpg");
-  background-size: 100% 100%;
-
   margin: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+}
+
+.background-heaven {
+  background-image: url("../src/public/heaven.jpg");
+  background-size: 100% 100%;
+}
+
+.background-hell {
+  background-image: url("../src/public/hell.jpg");
+  background-size: 100% 100%;
 }
 
 h1 {

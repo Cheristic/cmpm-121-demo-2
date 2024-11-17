@@ -269,6 +269,20 @@ function SetupEventsAndButtons() {
 
     })
 
+    const changeBackgroundButton = app.appendChild(document.createElement('button'));
+    changeBackgroundButton.innerHTML = "change background";
+    document.body.classList.add('background-heaven');
+    
+    changeBackgroundButton.addEventListener('click', () => {
+    if (document.body.classList.contains('background-heaven')) {
+        document.body.classList.remove('background-heaven');
+        document.body.classList.add('background-hell');
+    } else {
+        document.body.classList.remove('background-hell');
+        document.body.classList.add('background-heaven');
+    }
+    });
+    
     app.appendChild(document.createElement('br'));
 
     const penWeightText = app.appendChild(document.createElement('div'));
