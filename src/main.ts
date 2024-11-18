@@ -47,7 +47,7 @@ function main() {
 }
 
 function SetupContext(ctx: CanvasRenderingContext2D) {
-  if (ctx) {
+  if (ctx && canvas) {
     ctx.fillStyle = "#FFFFFF";
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#000000";
@@ -85,7 +85,6 @@ function SetupEventsAndButtons() {
   let toolRotation: number = 0;
 
   class DisplayLineCmd {
-    readonly startPoint: { x: number; y: number };
     line: { x: number; y: number }[] = [];
     readonly weight: number;
 
@@ -165,21 +164,25 @@ function SetupEventsAndButtons() {
 
   const cursorCmd = new DrawCursorCmd();
 
-  canvas.addEventListener("drawing-changed", () => {
-    ctx.fillStyle = "#FFFFFF";
-    ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
-    actions.forEach((cmd) => {
-      cmd.display(ctx);
+  if (canvas!) {
+    canvas.addEventListener("drawing-changed", () => {
+      if (ctx!) {
+        ctx.fillStyle = "#FFFFFF";
+        ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
+        actions.forEach((cmd) => {
+          cmd.display(ctx!);
+        });
+      }
     });
-  });
+  }
 
-  canvas.addEventListener("tool-moved", () => {
+  canvas!.addEventListener("tool-moved", () => {
     if (!cursor.active) {
       cursorCmd.display(cursor.x, cursor.y);
     }
   });
 
-  canvas.addEventListener("mousedown", (e) => {
+  canvas!.addEventListener("mousedown", (e) => {
     cursor.active = true;
 
     if (toolSelected == 0) currentAction = new DisplayLineCmd();
@@ -187,18 +190,18 @@ function SetupEventsAndButtons() {
     currentAction.drag(e.offsetX, e.offsetY);
     redoActions.length = 0;
     actions.push(currentAction);
-    canvas.dispatchEvent(OnDrawingChanged);
+    canvas!.dispatchEvent(OnDrawingChanged);
   });
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas!.addEventListener("mousemove", (e) => {
     if (cursor.active) {
       currentAction.drag(e.offsetX, e.offsetY);
-      canvas.dispatchEvent(OnDrawingChanged);
+      canvas!.dispatchEvent(OnDrawingChanged);
     } else {
       cursor.x = e.offsetX;
       cursor.y = e.offsetY;
-      canvas.dispatchEvent(OnDrawingChanged);
-      canvas.dispatchEvent(OnToolMoved);
+      canvas!.dispatchEvent(OnDrawingChanged);
+      canvas!.dispatchEvent(OnToolMoved);
     }
   });
 
@@ -206,25 +209,25 @@ function SetupEventsAndButtons() {
     cursor.active = false;
   });
 
-  canvas.addEventListener("mouseenter", (e) => {
+  canvas!.addEventListener("mouseenter", (e) => {
     if (cursor.leftscreen && cursor.active) { // left and came back while still holding down
       if (toolSelected == 0) currentAction = new DisplayLineCmd();
       else currentAction = new DisplayEmojiCmd(e.offsetX, e.offsetY);
       currentAction.drag(e.offsetX, e.offsetY);
       redoActions.length = 0;
       actions.push(currentAction);
-      canvas.dispatchEvent(OnDrawingChanged);
+      canvas!.dispatchEvent(OnDrawingChanged);
     }
     cursor.leftscreen = false;
   });
 
-  canvas.addEventListener("mouseleave", () => {
+  canvas!.addEventListener("mouseleave", () => {
     cursor.leftscreen = true;
-    canvas.dispatchEvent(OnDrawingChanged);
+    canvas!.dispatchEvent(OnDrawingChanged);
   });
 
   SetupFunctionButtons("clear", () => {
-    ctx.fillStyle = "#FFFFFF";
+    ctx!.fillStyle = "#FFFFFF";
     ctx?.fillRect(0, 0, canvas!.width, canvas!.height);
     let clearScreen = new ClearCmd();
     clearScreen.actions = actions.splice(0);
@@ -236,7 +239,7 @@ function SetupEventsAndButtons() {
     if (actions.length > 0) {
       let line = actions.pop();
       if (line) redoActions.push(line);
-      canvas.dispatchEvent(OnDrawingChanged);
+      canvas!.dispatchEvent(OnDrawingChanged);
     }
   });
 
@@ -254,7 +257,7 @@ function SetupEventsAndButtons() {
           });
         }
       }
-      canvas.dispatchEvent(OnDrawingChanged);
+      canvas!.dispatchEvent(OnDrawingChanged);
     }
   });
 
